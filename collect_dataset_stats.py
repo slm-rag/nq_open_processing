@@ -13,6 +13,8 @@
   отсутствии голосов — NONE.
 - «Среднее количество short answers на вопрос»: среднее по вопросам от
   (число непустых строк short answer / число аннотаций на этот вопрос).
+- «Количество ответов на вопрос»: длина списка `answer` из nq_open (сколько вариантов ответа
+  на одну строку датасета).
 
 Запуск:
   python collect_dataset_stats.py --input nq_open_validation_enriched --output stats.json
@@ -116,6 +118,9 @@ def collect_stats(ds) -> Dict[str, Any]:
     yes_no_per_question: Counter = Counter()
     yes_no_per_annotation: Counter = Counter()
 
+    nq_open_answer_counts: List[float] = []
+    answer_count_histogram: Counter = Counter()
+
     for ex in ds:
         doc = ex["document"]
         url = doc["url"]
@@ -196,6 +201,14 @@ def collect_stats(ds) -> Dict[str, Any]:
         for y in yn_list:
             yes_no_per_annotation[_yes_no_annotation_label(y)] += 1
 
+        ans = ex.get("answer")
+        if isinstance(ans, list):
+            n_ans = len(ans)
+        else:
+            n_ans = 0
+        nq_open_answer_counts.append(float(n_ans))
+        answer_count_histogram[n_ans] += 1
+
     counts_docs_per_q = [len(s) for s in docs_per_question.values()]
 
     out: Dict[str, Any] = {
@@ -209,6 +222,11 @@ def collect_stats(ds) -> Dict[str, Any]:
             "Медиана": float(statistics.median(counts_docs_per_q)) if counts_docs_per_q else 0.0,
             "Минимум": float(min(counts_docs_per_q)) if counts_docs_per_q else 0,
             "Максимум": float(max(counts_docs_per_q)) if counts_docs_per_q else 0,
+        },
+        "Количество ответов (nq_open) на вопрос": _stats_dict(nq_open_answer_counts),
+        "Распределение количества ответов на вопрос": {
+            str(k): int(answer_count_histogram[k])
+            for k in sorted(answer_count_histogram.keys())
         },
         "Длина документа (символы)": _stats_dict(doc_lengths_chars),
         "Длина документа (токены/слова)": _stats_dict(doc_lengths_toks),
