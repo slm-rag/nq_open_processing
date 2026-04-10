@@ -1,0 +1,12 @@
+# окружение
+env/
+.venv/
+venv/
+
+# собранные датасеты (Arrow + jsonl + отчёт слияния)
+nq_open_validation_enriched/
+qa_pairs.jsonl
+chunks_collection.jsonl
+chunk_relevance.jsonl
+documents_collection.jsonl
+merge_report.json
